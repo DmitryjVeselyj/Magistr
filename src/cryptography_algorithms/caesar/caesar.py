@@ -1,4 +1,4 @@
-from .abstract_crypto_algorithm import AbstractCryptoAlgorithm
+from src.cryptography_algorithms.abstract_crypto_algorithm import AbstractCryptoAlgorithm
 
 
 class Caesar(AbstractCryptoAlgorithm):

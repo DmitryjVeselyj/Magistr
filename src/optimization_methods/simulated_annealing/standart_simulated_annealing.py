@@ -14,10 +14,7 @@ class StandardAnnealer(AbstractAnnealer):
         return temp - alpha * iter
 
     def _get_new_state_arg(self, old_state, arg_bounds):
-        grad = self._grad(old_state)
-        if np.linalg.norm(grad) < 1e-2:
-            return get_random_value_by_range(arg_bounds)
-        return old_state - 0.001 * grad
+        return get_random_value_by_range(arg_bounds)
 
     def _is_need_to_change_state(self, olf_state_energy, new_state_energy):
         delta_energy = new_state_energy - olf_state_energy
