@@ -1,7 +1,8 @@
 from src.optimization_methods.simulated_annealing import StandardAnnealer
 from cryptography_algorithms import Caesar
 from cryptography_algorithms import AES
-
+from scipy.optimize import dual_annealing, differential_evolution
+from difflib import SequenceMatcher
 # def func(offset):
 #     caesar = Caesar(int(offset[0]))
 #     return -sum(a == b for a, b in zip("HOBANA", caesar.decrypt("KREDQD")))
@@ -29,18 +30,18 @@ def convert_int_str(int_val):
 
 
 def func_aes(int_val):
-    key = convert_int_str(int(int_val[0])) * 4
+    key1 = convert_int_str(int(int_val[0])) * 4
     try:
-        aes = AES(key)
+        aes = AES(key1)
         dec_msg = "".join(map(chr, aes.decrypt(enc_msg)))
     except Exception as e:
         return 99999999999
-    return -sum(a == b for a, b in zip("HOBA" * 4, dec_msg))
+    return -SequenceMatcher(None, key1, key).ratio()
 
 
 # b'PPPP' = 1347440720
 annealer = StandardAnnealer(func_aes, arg_bounds=[(1347440720 - 100, 1347440720 + 100)])
-res = annealer.optimize(max_iter=1000)
+res = annealer.optimize(initial_temp=10000000000, max_iter=10000*2)
 print(res)
 key = convert_int_str(int(res.arg[0])) * 4
 aes = AES(key)

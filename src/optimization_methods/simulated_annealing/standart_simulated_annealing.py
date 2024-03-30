@@ -7,14 +7,13 @@ from ..utils import get_random_value_by_range
 class StandardAnnealer(AbstractAnnealer):
     def __init__(self, optimize_func, arg_bounds):
         super().__init__(optimize_func, arg_bounds)
-        self._grad = nd.Gradient(self._optimize_func)
 
     def _cooling_func(self, temp, iter):
-        alpha = 0.001
+        alpha = 0.00001
         return temp - alpha * iter
 
     def _get_new_state_arg(self, old_state, arg_bounds):
-        return get_random_value_by_range(arg_bounds)
+        return old_state + get_random_value_by_range([(-10, 10)])
 
     def _is_need_to_change_state(self, olf_state_energy, new_state_energy):
         delta_energy = new_state_energy - olf_state_energy
