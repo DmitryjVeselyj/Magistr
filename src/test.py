@@ -1,71 +1,87 @@
-# from .abstract_sds import AbstractStochasticDiffusionSearch
-# from .agent import Agent
+from src.cryptography_algorithms import AES
+from sklearn.model_selection import train_test_split
+import copy
 import random
-
-# class StochasticDiffusionSearch(AbstractStochasticDiffusionSearch):
-#     def __init__(self, optimize_func, search_space):
-#         super().__init__(optimize_func, search_space)
-#
-#     @abstractmethod
-#     def initialize_agent(self):
-#         return Agent(''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for _ in range(length)))
-#
-#     @abstractmethod
-#     def diffusion_phase(self):
-#         pass
-#
-#     @abstractmethod
-#     def testing_phase(self):
-#         pass
-#
-#     @abstractmethod
-#     def is_halt_criteria_reached(self):
-#         pass
-
-key = 'abc'*40
+import string
+import numpy as np
+from matplotlib import pyplot as plt
+from keras.src.models import Sequential
+from keras.src.layers import Dense, Input
+from keras.src.layers import SimpleRNN
+from keras.src.layers import Dropout
+import itertools
+from difflib import SequenceMatcher
 
 
-class Agent:
-    def __init__(self, hyp_list):
-        self._hyp_list = hyp_list
-        self._active_per = 0
+def model():
+    # Initialize RNN:
+    regressor = Sequential()
 
-    def __str__(self):
-        return str(self._hyp_list) + '\n' + str(self._active_per)
-def test_function(agent):
-    for i, value in enumerate(agent._hyp_list):
-        if value[1] is False:
-            new_sym = random.choice('abcdefghijklmnopqrstuvwxyz')
-            agent._hyp_list[i] = [new_sym, new_sym == key[i]]
-            break
+    # Adding the first RNN layer and some Dropout regularization
+    regressor.add(Input(shape=(16, )))
+    regressor.add(Dense(units=128, activation='tanh'))
+    regressor.add(Dropout(0.2))
 
-    return sum(k_sym == hyp_sym[0] for k_sym, hyp_sym in zip(key, agent._hyp_list)) / len(key)
+    # Adding the second RNN layer and some Dropout regularization
+    regressor.add(Dense(units=128, activation='tanh'))
+    regressor.add(Dropout(0.2))
 
+    # Adding the third RNN layer and some Dropout regularization
+    regressor.add(Dense(units=128, activation='tanh' ))
+    regressor.add(Dropout(0.2))
 
-def optimize(agents_cnt=1000, max_iter=10000):
-    agents = [Agent([[random.choice('abcdefghijklmnopqrstuvwxyz'), False] for i in range(len(key))]) for i in
-              range(agents_cnt)]
-    eps = 0.75
-    for i in range(max_iter):
+    # Adding the fourth RNN layer and some Dropout regularization
+    regressor.add(Dense(units=128))
+    regressor.add(Dropout(0.2))
 
-        if all([agent._active_per > eps for agent in agents]):
-            break
+    # Adding the output layer
+    regressor.add(Dense(units=1))
 
-        for agent in agents:
-            if agent._active_per < eps:
-                polled_agent = random.choice(agents)
-                if agent._active_per > eps:
-                    agent._hyp_list = polled_agent._hyp_list
-                else:
-                    for i in range(len(key)):
-                        if agent._hyp_list[i][1] is False:
-                            new_sym = random.choice('abcdefghijklmnopqrstuvwxyz')
-                            agent._hyp_list[i] = [new_sym, key[i] == new_sym]
+    # Compile the RNN
+    regressor.compile(optimizer='adam', loss='mean_absolute_error')
 
-        for agent in agents:
-            agent._active_per = test_function(agent)
-
-    return max(agents, key=lambda x: x._active_per)
+    return regressor
 
 
-print(optimize())
+message = b'hoba' * 4
+key = [ord('a'), ord('b')] * 8
+enc_message = AES(''.join(map(chr, key))).encrypt(message)
+
+def generate_key(initial_key, n_incorrect_elements):
+    random_symbols = random.sample(string.ascii_lowercase, n_incorrect_elements)
+    generated_key = copy.deepcopy(initial_key)
+    for symbol in random_symbols:
+        generated_key[random.randint(0, len(initial_key) - 1)] = ord(symbol)
+
+    return generated_key
+
+
+def generate_dataset(initial_key):
+    x_train = []
+    y_train = []
+    orig_msg_binary = ''.join(map(lambda x: format(x, '08b'), map(ord, message.decode('ascii'))))
+    for i in range(0, len(initial_key)):
+        for _ in range(1000):
+            generated_key = ''.join(map(chr, generate_key(initial_key, i)))
+            aes = AES(generated_key)
+            dec_msg = aes.decrypt(enc_message)
+
+            dec_msg_binary =''.join(map(lambda x: format(x, '08b'), dec_msg))
+            x_train.append(dec_msg)
+            y_train.append(SequenceMatcher(None, orig_msg_binary, dec_msg_binary).ratio())
+
+    return np.array(x_train), np.array(y_train)
+
+
+def train_model(x, y):
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+    print(x_train)
+    print(y_train)
+    m = model()
+    m.fit(x_train, y_train, validation_data=(x_test, y_test), batch_size=32, epochs=40)
+
+    m.save('hoba.keras')
+
+
+x, y = generate_dataset(key)
+train_model(x, y)

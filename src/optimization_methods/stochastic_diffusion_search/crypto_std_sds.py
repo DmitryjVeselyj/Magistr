@@ -39,5 +39,6 @@ class CryptoStochasticDiffusionSearch(AbstractStochasticDiffusionSearch):
         return agent.hyp
 
     def is_halt_criteria_reached(self):
-        eps = 0.75
+        eps = self._desired_score
+        print([agent.score for agent in self._agents])
         return all([agent.score > eps for agent in self._agents])
