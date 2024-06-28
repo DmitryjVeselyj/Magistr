@@ -15,8 +15,8 @@ class AbstractStochasticDiffusionSearch(OptimizationMethod):
 
         iter_cnt = 0
         while iter_cnt < max_iter and not self.is_halt_criteria_reached():
-            self.diffusion_phase() # return value add
-            self.testing_phase() # return value add
+            self.diffusion_phase()
+            self.testing_phase()
             iter_cnt += 1
 
         best_agent = max(self._agents, key=lambda agent: agent.score)

@@ -3,6 +3,7 @@ from cryptography_algorithms import Caesar
 from cryptography_algorithms import AES
 from scipy.optimize import dual_annealing, differential_evolution
 from difflib import SequenceMatcher
+from Crypto.Cipher import AES as AESC
 # def func(offset):
 #     caesar = Caesar(int(offset[0]))
 #     return -sum(a == b for a, b in zip("HOBANA", caesar.decrypt("KREDQD")))
@@ -17,7 +18,13 @@ key = 'P' * 16
 message = b'HOBA' * 4
 aes = AES(key)
 enc_msg = aes.encrypt(message)
+
+cipher = AESC.new(key.encode(), AESC.MODE_ECB)
+cipher_dec = AESC.new(key.encode(), AESC.MODE_CTR)
+en = cipher.encrypt(message)
+print(cipher.encrypt(message))
 print(enc_msg)
+print(cipher_dec.decrypt(en).decode())
 
 
 def convert_int_str(int_val):
